@@ -1,26 +1,6 @@
 from re import sub
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from scipy.stats.stats import pearsonr
-
-
-def transformations(df):
-
-    df = df.dropna()
-    df[['RM^2', 'NOX^2']] = df[['RM', 'NOX']]**2
-    df[['ln(DIS)', 'ln(RAD)', 'ln(LSTAT)', 'ln(INDUS)', 'ln(MEDV)']] = np.log(df[['DIS', 'RAD', 'LSTAT', 'INDUS', 'MEDV']])
-
-    return df
-
-
-def sub_regression(X, y, to_drop):
-
-    X = X.drop(to_drop, axis=1)
-    print(X.columns)
-    reg = LinearRegression().fit(X, y)
-    return reg.predict(X)
-
 
 def main():
 
