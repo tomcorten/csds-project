@@ -5,15 +5,6 @@ import statsmodels.api as sm
 import scipy
 
 
-def transformations(df):
-
-    df = df.dropna()
-    # df[['RM^2', 'NOX^2']] = df[['RM', 'NOX']]**2
-    # df[['ln(DIS)', 'ln(RAD)', 'ln(LSTAT)', 'ln(INDUS)', 'ln(MEDV)']] = np.log(df[['DIS', 'RAD', 'LSTAT', 'INDUS', 'MEDV']])
-
-    return df
-
-
 def wals(X1, X2, y):
 
     n = len(y)
@@ -102,89 +93,61 @@ def wals(X1, X2, y):
 
     res = sm.OLS(y, Z).fit()
     resid = res.resid
-    ci = res.conf_int()
     gamma_hat = res.params
     s2 = (resid.T@resid)/(n-k)
     s = s2**(1/2)
     gamma2_hat = gamma_hat[k1:]
     x = gamma2_hat/s
+    #print(res.summary())
 
     m_post = np.zeros((k2, 1))
     v_post = np.zeros((k2, 1))
     delta = (1-alpha)/q
     for h in range(k2):
         xh = x[h]
-        pass
+        A0 = lambda gamma: (scipy.stats.norm.pdf(xh-gamma) + scipy.stats.norm.pdf(xh+gamma))*prior(gamma, alpha, c, delta, q)
+        A1 = lambda gamma: ((xh - gamma)*scipy.stats.norm.pdf(xh-gamma) + (xh + gamma )*scipy.stats.norm.pdf(xh + gamma))*prior(gamma, alpha, c, delta, q)
+        A2 = lambda gamma: ((xh - gamma)**2*scipy.stats.norm.pdf(xh-gamma) + (xh + gamma )**2*scipy.stats.norm.pdf(xh + gamma))*prior(gamma, alpha, c, delta, q)
+        int_A0, errA0 = scipy.integrate.quad(A0, 0, np.inf)
+        int_A1, errA1 = scipy.integrate.quad(A1, 0, np.inf)
+        int_A2, errA2 = scipy.integrate.quad(A2, 0, np.inf)
+        psi1 = int_A1/int_A0
+        psi2 = int_A2/int_A0
+        m_post[h] = xh - psi1
+        v_post[h] = psi2 - psi2**2
+        #print(m_post, '\n', v_post)
+    
+    """%% --- Step 6: WALS estimates 
+        c2          = s * m_post;
+        c1          = V1r * Z1' * (y - Z2*c2);
+        b1          = Delta1 * c1;
+        b2          = D2 * c2;"""
 
-    def prior(gamma):
-        return lambda gamma: ((q*c**delta)/(2*np.exp(scipy.special.loggamma(delta))))*(np.abs(gamma)**(-alpha)*(np.exp(-c*(np.abs(gamma)**q))))
+    c2 = s*m_post
+    c1 = V1r@Z1.T@(y-Z2@c2)
+    b1 = d1@c1
+    b2 = D2@c2
 
+    """%% --- Step 7: WALS precisions
+        varc2       = s2 * diag(v_post);
+        varb2       = D2 * varc2 * D2';
+        Q           = V1r * Z1' * Z2;
+        varc1       = s2 * V1r + Q * varc2 * Q';
+        varb1       = Delta1 * varc1 * Delta1';
+        covc1c2     = -Q * varc2;
+        covb1b2     = Delta1 * covc1c2 * D2';"""
 
-    def A0(gamma, xh):
-        return lambda gamma: scipy.stats.norm(xh-gamma) + scipy.stats.norm(xh + gamma)*prior(gamma)
-
-
-    def A1(gamma, xh):
-        return lambda gamma: (xh - gamma)*scipy.stats.norm(xh-gamma) + (xh + gamma )*scipy.stats.norm(xh + gamma)*prior(gamma)
-
-
-    def A2(gamma, xh):
-        return lambda gamma: (xh - gamma)**2*scipy.stats.norm(xh-gamma) + (xh + gamma )**2*scipy.stats.norm(xh + gamma)*prior(gamma)   
-
-    """%% --- Step 5: Compute the mean and variance of the posterior 
-                m_post  = zeros(k2,1);    
-                v_post  = zeros(k2,1);
-                delta=(1-alpha)./ q;
-                Prior= @(gamma) ((q .* c.^delta) ./ (2 .* exp(gammaln(delta)))) .* abs(gamma).^(-alpha) .* (exp(-c.*(abs(gamma).^q)));    
-                for h=1:k2
-                    xh=x(h);
-                    A0=@(gamma) (                 normpdf(xh-gamma) +                  normpdf(xh+gamma)).*Prior(gamma);
-                    A1=@(gamma) ( (xh-gamma)    .*normpdf(xh-gamma) +  (xh+gamma).*    normpdf(xh+gamma)).*Prior(gamma);
-                    A2=@(gamma) (((xh-gamma).^2).*normpdf(xh-gamma) + ((xh+gamma).^2).*normpdf(xh+gamma)).*Prior(gamma);
-                    int_A0 = quadgk(A0,0,inf);
-                    int_A1 = quadgk(A1,0,inf);
-                    int_A2 = quadgk(A2,0,inf);
-                    psi1 = int_A1/int_A0;
-                    psi2 = int_A2/int_A0;
-                    m_post(h) = xh - psi1;                                    
-                    v_post(h) = psi2 - psi1^2;
-                end
-            end
-        else
-            pmdata  = xlsread([p.Results.postmoments]);
-            xtab=pmdata(:,1);           
-            mtab=pmdata(:,2);
-            vtab=pmdata(:,3);
-            for h=1:k2
-                signxh=sign(x(h));
-                xh=abs(x(h));
-                if xh<100 
-                    xhl1=floor(xh*100)/100;
-                    whl1=1-(floor(xh*10000)/10000-xhl1).*100;
-                    xhl1_ind=find(xtab==xhl1);
-                    m_post(h) =signxh .* (whl1 .* mtab(xhl1_ind) + (1-whl1) .* mtab(xhl1_ind+1));
-                    v_post(h) =whl1 .* vtab(xhl1_ind) + (1-whl1) .* vtab(xhl1_ind+1);
-                else
-                    m_post(h)=signxh .* mtab(10001);
-                    v_post(h)=vtab(10001);
-                end
-            end
-        end"""
+    varc2 = s2*np.diag(v_post)
+    varb2 = D2*varc2*D2
+    Q = V1r@Z1.T@Z2
+    varc1 = s2*V1r+Q*varc2*Q.T
+    varb1 = d1*varc1*d1
+    covc1c2 = -Q*varc2
+    covb1b2 = d1*covc1c2*D2
+    print(covb1b2)
 
 
-def main():
+def prior(gamma, alpha, c, delta, q):
 
-    data = pd.read_csv('HousingData.csv')
-    data = transformations(data)
+    return ((q*c**delta)/(2*np.exp(scipy.special.loggamma(delta))))*(np.abs(gamma)**(-alpha)*(np.exp(-c*(np.abs(gamma)**q))))
 
-    X = data.iloc[:, 0:6]
-    y = data.iloc[:, -1]
-
-    X1 = X.iloc[:, 0:4]
-    X2 = X.iloc[:, 4:]
-  
-    wals(X1.to_numpy(), X2.to_numpy(), y.to_numpy())
-    #print(sm.OLS(y, X).fit().summary())
-
-if __name__ == "__main__":
-    main()
