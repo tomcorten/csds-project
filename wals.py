@@ -98,7 +98,6 @@ def wals(X1, X2, y):
     s = s2**(1/2)
     gamma2_hat = gamma_hat[k1:]
     x = gamma2_hat/s
-    #print(res.summary())
 
     m_post = np.zeros((k2, 1))
     v_post = np.zeros((k2, 1))
@@ -115,8 +114,8 @@ def wals(X1, X2, y):
         psi2 = int_A2/int_A0
         m_post[h] = xh - psi1
         v_post[h] = psi2 - psi2**2
-        #print(m_post, '\n', v_post)
-    
+
+    # Large coefficients lead to integral of 0    
     """%% --- Step 6: WALS estimates 
         c2          = s * m_post;
         c1          = V1r * Z1' * (y - Z2*c2);
