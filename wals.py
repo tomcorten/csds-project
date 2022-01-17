@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sys
 import statsmodels.api as sm
+import scipy
 
 
 def transformations(df):
@@ -20,6 +21,10 @@ def wals(X1, X2, y):
     k2 = X2.shape[1]
     k = k1 + k2
 
+    q = 0.887630085544086
+    alpha = 1-q
+    c = np.log(2)
+
     """%% --- Step 2.a: Scaling X1 so that all diagonal elements of 
     %%     (X1*Delta1)'X1*Delta1 are all one
     d1 = diag(X1'*X1).^(-1/2);
@@ -37,7 +42,7 @@ def wals(X1, X2, y):
     Z2s     = Delta2 * Z2d * Delta2;"""
 
     # 2a
-    d1 = np.diag(np.diag((X1.T@X2))**(-1/2))
+    d1 = np.diag(np.diag((X1.T@X1))**(-1/2))
     Z1 = X1@d1
 
     # 2b
@@ -89,9 +94,12 @@ def wals(X1, X2, y):
     end
     gamma2_hat             = gamma_hat(k1+1:k);
     x                      = gamma2_hat / s;"""
-    
+
     Z = np.hstack((Z1, Z2))
-    Z = Z[:, ~np.all(np.isnan(Z), axis=0)]
+
+    # If Xi is not positive definite, what to do?
+    # Z = Z[:, ~np.all(np.isnan(Z), axis=0)]
+
     res = sm.OLS(y, Z).fit()
     resid = res.resid
     ci = res.conf_int()
@@ -101,7 +109,67 @@ def wals(X1, X2, y):
     gamma2_hat = gamma_hat[k1:]
     x = gamma2_hat/s
 
-    print(x)
+    m_post = np.zeros((k2, 1))
+    v_post = np.zeros((k2, 1))
+    delta = (1-alpha)/q
+    for h in range(k2):
+        xh = x[h]
+        pass
+
+    def prior(gamma):
+        return lambda gamma: ((q*c**delta)/(2*np.exp(scipy.special.loggamma(delta))))*(np.abs(gamma)**(-alpha)*(np.exp(-c*(np.abs(gamma)**q))))
+
+
+    def A0(gamma, xh):
+        return lambda gamma: scipy.stats.norm(xh-gamma) + scipy.stats.norm(xh + gamma)*prior(gamma)
+
+
+    def A1(gamma, xh):
+        return lambda gamma: (xh - gamma)*scipy.stats.norm(xh-gamma) + (xh + gamma )*scipy.stats.norm(xh + gamma)*prior(gamma)
+
+
+    def A2(gamma, xh):
+        return lambda gamma: (xh - gamma)**2*scipy.stats.norm(xh-gamma) + (xh + gamma )**2*scipy.stats.norm(xh + gamma)*prior(gamma)   
+
+    """%% --- Step 5: Compute the mean and variance of the posterior 
+                m_post  = zeros(k2,1);    
+                v_post  = zeros(k2,1);
+                delta=(1-alpha)./ q;
+                Prior= @(gamma) ((q .* c.^delta) ./ (2 .* exp(gammaln(delta)))) .* abs(gamma).^(-alpha) .* (exp(-c.*(abs(gamma).^q)));    
+                for h=1:k2
+                    xh=x(h);
+                    A0=@(gamma) (                 normpdf(xh-gamma) +                  normpdf(xh+gamma)).*Prior(gamma);
+                    A1=@(gamma) ( (xh-gamma)    .*normpdf(xh-gamma) +  (xh+gamma).*    normpdf(xh+gamma)).*Prior(gamma);
+                    A2=@(gamma) (((xh-gamma).^2).*normpdf(xh-gamma) + ((xh+gamma).^2).*normpdf(xh+gamma)).*Prior(gamma);
+                    int_A0 = quadgk(A0,0,inf);
+                    int_A1 = quadgk(A1,0,inf);
+                    int_A2 = quadgk(A2,0,inf);
+                    psi1 = int_A1/int_A0;
+                    psi2 = int_A2/int_A0;
+                    m_post(h) = xh - psi1;                                    
+                    v_post(h) = psi2 - psi1^2;
+                end
+            end
+        else
+            pmdata  = xlsread([p.Results.postmoments]);
+            xtab=pmdata(:,1);           
+            mtab=pmdata(:,2);
+            vtab=pmdata(:,3);
+            for h=1:k2
+                signxh=sign(x(h));
+                xh=abs(x(h));
+                if xh<100 
+                    xhl1=floor(xh*100)/100;
+                    whl1=1-(floor(xh*10000)/10000-xhl1).*100;
+                    xhl1_ind=find(xtab==xhl1);
+                    m_post(h) =signxh .* (whl1 .* mtab(xhl1_ind) + (1-whl1) .* mtab(xhl1_ind+1));
+                    v_post(h) =whl1 .* vtab(xhl1_ind) + (1-whl1) .* vtab(xhl1_ind+1);
+                else
+                    m_post(h)=signxh .* mtab(10001);
+                    v_post(h)=vtab(10001);
+                end
+            end
+        end"""
 
 
 def main():
@@ -109,14 +177,14 @@ def main():
     data = pd.read_csv('HousingData.csv')
     data = transformations(data)
 
-    X = data.iloc[:, 0:-1]
+    X = data.iloc[:, 0:6]
     y = data.iloc[:, -1]
 
     X1 = X.iloc[:, 0:4]
     X2 = X.iloc[:, 4:]
-
+  
     wals(X1.to_numpy(), X2.to_numpy(), y.to_numpy())
-
+    #print(sm.OLS(y, X).fit().summary())
 
 if __name__ == "__main__":
     main()
