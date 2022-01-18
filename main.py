@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
+import statsmodels.api as sm
 from scipy.stats.stats import pearsonr
 from wals import wals
 
@@ -27,13 +27,15 @@ def main():
     data = pd.read_csv('HousingData.csv')
     data = transformations(data)
 
-    X = data.iloc[:, 0:5]
+    X = data.iloc[:, 0:-1]
     y = data.iloc[:, -1]
 
     X1 = X.iloc[:, 0:4]
     X2 = X.iloc[:, 4:]
+
+    print(sm.OLS(y, X).fit().summary())
   
-    wals(X1.to_numpy(), X2.to_numpy(), y.to_numpy())
+    #wals(X1.to_numpy(), X2.to_numpy(), y.to_numpy())
 
     """pred1 = sub_regression(X, y, to_drop=['RM', 'DIS', 'RAD', 'ln(INDUS)', 'NOX', 'MEDV'])
     #pred2 = sub_regression(X, y, to_drop=['RM', 'DIS', 'RAD', 'ln(INDUS)', 'NOX^2'])

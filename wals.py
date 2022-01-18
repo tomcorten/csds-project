@@ -5,13 +5,12 @@ import statsmodels.api as sm
 import scipy
 
 
-def wals(X1, X2, y):
+def wals(X1, X2, y, prior_dist = 'Weibull'):
 
     n = len(y)
-    k1 = X1.shape[1]
-    k2 = X2.shape[1]
+    k1 = 6
+    k2 = 4
     k = k1 + k2
-
     q = 0.887630085544086
     alpha = 1-q
     c = np.log(2)
@@ -44,6 +43,7 @@ def wals(X1, X2, y):
     d2 = np.diag(np.diag(Z2d)**(-1/2))
     Z2s = d2@Z2d@d2
 
+
     """%% --- Step 3: Semi-orthogonalization of Z2s
     [T, Xi]     = eig(Z2s);
     order       = max(size(Xi));
@@ -63,14 +63,17 @@ def wals(X1, X2, y):
         
         """
 
-    T, Xi = np.linalg.eig(Z2s)
+    Xi, T = np.linalg.eig(Z2s)
+    Xi = np.diag(Xi)
     order = max(Xi.shape)
     tol = sys.float_info.epsilon
     eigv = np.diag(Xi)
     rank = sum(eigv > tol)
 
-    D2 = d2@T@np.diag(np.diag(Xi)**(-1/2))
-    Z2 = X2*D2
+
+    D2 = d2@T@np.diag(np.diag(Xi)**(-.5))
+    Z2 = X2@D2
+    
 
     """
     %% --- Step 4: OLS of unrestricted model
@@ -87,7 +90,6 @@ def wals(X1, X2, y):
     x                      = gamma2_hat / s;"""
 
     Z = np.hstack((Z1, Z2))
-
     # If Xi is not positive definite, what to do?
     # Z = Z[:, ~np.all(np.isnan(Z), axis=0)]
 
