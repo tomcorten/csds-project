@@ -33,9 +33,7 @@ def main():
     X1 = X.iloc[:, 0:4]
     X2 = X.iloc[:, 4:]
 
-    print(sm.OLS(y, X).fit().summary())
-  
-    #wals(X1.to_numpy(), X2.to_numpy(), y.to_numpy())
+    wals(X1.to_numpy(), X2.to_numpy(), y.to_numpy())
 
     """pred1 = sub_regression(X, y, to_drop=['RM', 'DIS', 'RAD', 'ln(INDUS)', 'NOX', 'MEDV'])
     #pred2 = sub_regression(X, y, to_drop=['RM', 'DIS', 'RAD', 'ln(INDUS)', 'NOX^2'])

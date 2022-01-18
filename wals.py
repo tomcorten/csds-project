@@ -73,7 +73,6 @@ def wals(X1, X2, y, prior_dist = 'Weibull'):
 
     D2 = d2@T@np.diag(np.diag(Xi)**(-.5))
     Z2 = X2@D2
-    
 
     """
     %% --- Step 4: OLS of unrestricted model
@@ -90,8 +89,6 @@ def wals(X1, X2, y, prior_dist = 'Weibull'):
     x                      = gamma2_hat / s;"""
 
     Z = np.hstack((Z1, Z2))
-    # If Xi is not positive definite, what to do?
-    # Z = Z[:, ~np.all(np.isnan(Z), axis=0)]
 
     res = sm.OLS(y, Z).fit()
     resid = res.resid
@@ -104,18 +101,20 @@ def wals(X1, X2, y, prior_dist = 'Weibull'):
     m_post = np.zeros((k2, 1))
     v_post = np.zeros((k2, 1))
     delta = (1-alpha)/q
+
     for h in range(k2):
         xh = x[h]
         A0 = lambda gamma: (scipy.stats.norm.pdf(xh-gamma) + scipy.stats.norm.pdf(xh+gamma))*prior(gamma, alpha, c, delta, q)
         A1 = lambda gamma: ((xh - gamma)*scipy.stats.norm.pdf(xh-gamma) + (xh + gamma )*scipy.stats.norm.pdf(xh + gamma))*prior(gamma, alpha, c, delta, q)
-        A2 = lambda gamma: ((xh - gamma)**2*scipy.stats.norm.pdf(xh-gamma) + (xh + gamma )**2*scipy.stats.norm.pdf(xh + gamma))*prior(gamma, alpha, c, delta, q)
+        A2 = lambda gamma: (((xh - gamma)**2)*scipy.stats.norm.pdf(xh-gamma) + ((xh + gamma)**2)*scipy.stats.norm.pdf(xh + gamma))*prior(gamma, alpha, c, delta, q)
         int_A0, errA0 = scipy.integrate.quad(A0, 0, np.inf)
         int_A1, errA1 = scipy.integrate.quad(A1, 0, np.inf)
         int_A2, errA2 = scipy.integrate.quad(A2, 0, np.inf)
         psi1 = int_A1/int_A0
         psi2 = int_A2/int_A0
         m_post[h] = xh - psi1
-        v_post[h] = psi2 - psi2**2
+        v_post[h] = psi2 - psi1**2
+
 
     # Large coefficients lead to integral of 0    
     """%% --- Step 6: WALS estimates 
@@ -125,7 +124,7 @@ def wals(X1, X2, y, prior_dist = 'Weibull'):
         b2          = D2 * c2;"""
 
     c2 = s*m_post
-    c1 = V1r@Z1.T@(y-Z2@c2)
+    c1 = V1r@Z1.T@(y.reshape((-1,1))-Z2@c2)
     b1 = d1@c1
     b2 = D2@c2
 
@@ -138,17 +137,16 @@ def wals(X1, X2, y, prior_dist = 'Weibull'):
         covc1c2     = -Q * varc2;
         covb1b2     = Delta1 * covc1c2 * D2';"""
 
-    varc2 = s2*np.diag(v_post)
+    varc2 = s2*np.diag(v_post.T[0])
     varb2 = D2*varc2*D2
     Q = V1r@Z1.T@Z2
-    varc1 = s2*V1r+Q*varc2*Q.T
+    varc1 = s2*V1r+Q@varc2@Q.T
     varb1 = d1*varc1*d1
-    covc1c2 = -Q*varc2
-    covb1b2 = d1*covc1c2*D2
-    print(covb1b2)
+    covc1c2 = -Q@varc2
+    covb1b2 = d1@covc1c2@D2.T
+    
 
 
 def prior(gamma, alpha, c, delta, q):
 
     return ((q*c**delta)/(2*np.exp(scipy.special.loggamma(delta))))*(np.abs(gamma)**(-alpha)*(np.exp(-c*(np.abs(gamma)**q))))
-
