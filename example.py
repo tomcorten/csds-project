@@ -1,7 +1,4 @@
 import pandas as pd
-import numpy as np
-import statsmodels.api as sm
-from scipy.stats.stats import pearsonr
 from wals_procedure import wals
 
 
@@ -31,11 +28,11 @@ def main():
 
     k = data.shape[1]
     k1 = 6
-    k2 = k - k1
     y = data.iloc[:, 1]
     X1 = data.iloc[:, 2:k1+2]
     X2 = data.iloc[:, k1+2:k+2]
     wals(X1.to_numpy(), X2.to_numpy(), y.to_numpy())
-    
+   
+
 if __name__ == "__main__":
     main()

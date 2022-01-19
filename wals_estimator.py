@@ -9,7 +9,7 @@ class WALSestimator:
         self.auxillary = auxillary.to_numpy()
 
     def fit(self):
-        self.b, self.se = wals(self.focus, self.auxillary, self.endog)
+        self.b, self.se, self.V = wals(self.focus, self.auxillary, self.endog)
 
-    def predict(self):
-        pass     
+    def predict(self, X):       
+        return X@self.b

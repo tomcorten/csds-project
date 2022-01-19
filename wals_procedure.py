@@ -86,7 +86,7 @@ def wals(X1, X2, y):
     b = np.vstack((b1, b2))
     se = np.hstack((np.diag(varb1)**(.5), np.diag(varb2)**(.5)))
     V = np.hstack((varb1, covb1b2))
-    return b, se
+    return b, se, V
 
 
 def prior(gamma, alpha, c, delta, q):
