@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 from scipy.stats.stats import pearsonr
-from wals import wals
+from wals_estimator import WALSestimator
 
 
 def transformations(df):
@@ -29,11 +29,11 @@ def main():
 
     X = data.iloc[:, 0:-1]
     y = data.iloc[:, -1]
-
     X1 = X.iloc[:, 0:4]
     X2 = X.iloc[:, 4:]
-
-    wals(X1.to_numpy(), X2.to_numpy(), y.to_numpy())
+    model = WALSestimator(y, X1, X2)
+    model.fit()
+    print(model.se)
 
     """pred1 = sub_regression(X, y, to_drop=['RM', 'DIS', 'RAD', 'ln(INDUS)', 'NOX', 'MEDV'])
     #pred2 = sub_regression(X, y, to_drop=['RM', 'DIS', 'RAD', 'ln(INDUS)', 'NOX^2'])
