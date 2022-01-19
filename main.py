@@ -29,13 +29,15 @@ def main():
     data = transformations(data)
 
     X = data.iloc[:, 0:-1]
+    X = sm.add_constant(X)
     y = data.iloc[:, -1]
     X1 = X.iloc[:, 0:4]
     X2 = X.iloc[:, 4:]
     model = WALSestimator(y, X1, X2)
     model.fit()
     pred = model.predict(X)
-  
+    print(model.b)
+    print(sm.OLS(y, X).fit().summary())
 
     """pred1 = sub_regression(X, y, to_drop=['RM', 'DIS', 'RAD', 'ln(INDUS)', 'NOX', 'MEDV'])
     #pred2 = sub_regression(X, y, to_drop=['RM', 'DIS', 'RAD', 'ln(INDUS)', 'NOX^2'])
