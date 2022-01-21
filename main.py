@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
-import seaborn as sb
+# import seaborn as sb
 import matplotlib.pyplot as mp
 from wals.wals_estimator import WALSestimator
 from weighing_schemes import ce_weighting_scheme
@@ -48,9 +48,9 @@ def prediction_matrix(X, y, dev=False):
 
 def plot_heatmap(pred_df):
 
-    mask = np.triu(np.ones_like(pred_df.corr()))
+    # mask = np.triu(np.ones_like(pred_df.corr()))
     # plotting a triangle correlation heatmap
-    dataplot = sb.heatmap(pred_df.corr(), cmap="YlGnBu", annot=True, mask=mask, fmt='g')
+    # dataplot = sb.heatmap(pred_df.corr(), cmap="YlGnBu", annot=True, mask=mask, fmt='g')
     # displaying heatmap
     mp.show()
 
@@ -68,15 +68,15 @@ def main():
 
     model = WALSestimator(y, x1, x2)
     model.fit()
-    pred = model.predict(X)
+    print(model.b)
     # print(sm.OLS(y, X).fit().summary())
 
     # prediction_df = prediction_matrix(X, y)
-    # avg_prediction_df = prediction_matrix(X, y, dev=True)
-    #plot_heatmap(avg_prediction_df)
-    # R = avg_prediction_df.corr()
-    # print(R.to_numpy())
-    # print(ce_weighting_scheme(R))
+    avg_prediction_df = prediction_matrix(X, y, dev=True)
+    # plot_heatmap(avg_prediction_df)
+    R = avg_prediction_df.corr()
+    print(R.to_numpy())
+    print(ce_weighting_scheme(R))
 
 
 if __name__ == "__main__":
