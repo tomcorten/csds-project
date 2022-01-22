@@ -4,7 +4,7 @@ import statsmodels.api as sm
 # import seaborn as sb
 import matplotlib.pyplot as mp
 from wals.wals_estimator import WALSestimator
-from weighing_schemes import ce_weighting_scheme
+from weighing_schemes import ce_weighting_scheme, cs_weigting_scheme
 
 
 MODEL1_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'CHAS', 'AGE', 'TAX', 'PTRATIO', 'B', 'RM^2', 'NOX^2', 'ln(DIS)', 'ln(RAD)', 'ln(LSTAT)']
@@ -22,8 +22,9 @@ MODELS = [MODEL1_INDEP, MODEL2_INDEP, MODEL3_INDEP, MODEL4_INDEP, MODEL5_INDEP, 
 def transformations(df):
 
     df = df.dropna()
-    # df[['RM^2', 'NOX^2']] = df.loc[:, ['RM', 'NOX']]**2
-    # df[['ln(DIS)', 'ln(RAD)', 'ln(LSTAT)', 'ln(INDUS)', 'ln(MEDV)']] = np.log(df.loc[:, ['DIS', 'RAD', 'LSTAT', 'INDUS', 'MEDV']])
+    df[['RM^2', 'NOX^2']] = df.loc[:, ['RM', 'NOX']]**2
+    df[['ln(DIS)', 'ln(RAD)', 'ln(LSTAT)', 'ln(INDUS)', 'ln(MEDV)']] = np.log(df.loc[:, ['DIS', 'RAD', 'LSTAT', 'INDUS', 'MEDV']])
+
     return df
 
 
@@ -66,17 +67,16 @@ def main():
     x1 = X.iloc[:, 0:4]
     x2 = X.iloc[:, 4:]
 
-    model = WALSestimator(y, x1, x2)
-    model.fit()
-    print(model.b)
+    # model = WALSestimator(y, x1, x2)
+    # model.fit()
+    # print(model.b)
     # print(sm.OLS(y, X).fit().summary())
 
-    # prediction_df = prediction_matrix(X, y)
+    prediction_df = prediction_matrix(X, y)
     avg_prediction_df = prediction_matrix(X, y, dev=True)
     # plot_heatmap(avg_prediction_df)
     R = avg_prediction_df.corr()
-    print(R.to_numpy())
-    print(ce_weighting_scheme(R))
+    print(cs_weigting_scheme(R))
 
 
 if __name__ == "__main__":
