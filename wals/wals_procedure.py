@@ -88,8 +88,6 @@ def wals(X1, X2, y):
     V = np.hstack((varb1, covb1b2))
     return b, se, V
 
-    
-
 
 def prior(gamma, alpha, c, delta, q):
 
