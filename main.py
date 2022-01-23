@@ -76,7 +76,7 @@ def main():
     avg_prediction_df = prediction_matrix(X, y, dev=True)
     # plot_heatmap(avg_prediction_df)
     R = avg_prediction_df.corr()
-    print(cs_weigting_scheme(R))
+    cs_weigting_scheme(R)
 
 
 if __name__ == "__main__":

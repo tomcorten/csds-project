@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 
 def ce_weighting_scheme(R):
@@ -17,8 +18,10 @@ def ce_weighting_scheme(R):
 def cs_weigting_scheme(R):
 
     D = np.identity(len(R))
-    gamma, Q = np.linalg.eig(D@R@D)
-    E = np.linalg.inv(D)@Q@gamma**(1/2)@Q.T
-    D_1 = np.identity(len(R))@np.diag(E)
-
-    return
+    eps = 1
+    while eps > sys.float_info.epsilon:
+        gamma, Q = np.linalg.eig(D@R@D)
+        E = np.linalg.inv(D)@Q@np.diag(gamma)**(1/2)@Q.T
+        D_1 = np.diag(np.diag(E))
+        eps = all(np.diag(D_1-D))
+        D = D_1
