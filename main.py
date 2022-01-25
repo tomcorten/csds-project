@@ -4,7 +4,7 @@ import statsmodels.api as sm
 import seaborn as sb
 import matplotlib.pyplot as mp
 from wals.wals_estimator import WALSestimator
-from weighing_schemes import ce_weighting_scheme, cs_weigting_scheme
+import weighing_schemes
 
 
 MODEL1_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'CHAS', 'AGE', 'TAX', 'PTRATIO', 'B', 'RM^2', 'NOX^2', 'ln(DIS)', 'ln(RAD)', 'ln(LSTAT)']
@@ -56,27 +56,39 @@ def plot_heatmap(pred_df):
     mp.show()
 
 
+def to_output(data, model):
+
+    estimates = dict(zip(data.columns.values[:-1], model.b.T[0]))
+    df = pd.DataFrame(data=estimates, index=[0])
+    df = (df.T)
+    df.columns = ['Coefficient value']
+
+
 def main():
 
     data = pd.read_csv('HousingData.csv')
     data = transformations(data)
+    data = sm.add_constant(data)
 
     X = data.iloc[:, 0:-1]
-    X = sm.add_constant(X)
     y = data.iloc[:, -1]
     x1 = X.iloc[:, 0:4]
     x2 = X.iloc[:, 4:]
 
-    # model = WALSestimator(y, x1, x2)
-    # model.fit()
-    # print(model.b)
-    # print(sm.OLS(y, X).fit().summary())
+    model = WALSestimator(y, x1, x2)
+    model.fit()
+    to_output(data, model)
 
-    prediction_df = prediction_matrix(X, y)
+    # prediction_df = prediction_matrix(X, y)
+
     avg_prediction_df = prediction_matrix(X, y, dev=True)
-    # plot_heatmap(avg_prediction_df)
-    R = prediction_df.corr()
-    print(cs_weigting_scheme(R))
+    # plot_heatmap(data)
+    R = avg_prediction_df.corr()
+    ce = (weighing_schemes.ce_weighting_scheme(R))
+    cs = (weighing_schemes.cs_weigting_scheme(R))
+
+    r_df = pd.DataFrame(data=np.vstack((ce, cs)).T, columns=['Cap-Eigenvalue', 'Cos-Square'])
+    print(r_df)
 
 
 if __name__ == "__main__":
