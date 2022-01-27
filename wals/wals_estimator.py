@@ -15,5 +15,5 @@ class WALSestimator:
     def predict(self, X):
         self.predictions = X@self.b
 
-    def rmse(self):
-        return metrics.mean_squared_error(self.endog, self.predictions)
+    def rmse(self, y_true):
+        return metrics.mean_squared_error(y_true, self.predictions)
