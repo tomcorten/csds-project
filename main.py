@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 import seaborn as sb
 import matplotlib.pyplot as mp
 from wals.wals_estimator import WALSestimator
@@ -62,6 +63,19 @@ def to_output(data, model):
     df = pd.DataFrame(data=estimates, index=[0])
     df = (df.T)
     df.columns = ['Coefficient value']
+    print(df)
+
+
+def vif_scores(X):
+
+    # VIF dataframe
+    vif_data = pd.DataFrame()
+    vif_data["feature"] = X.columns
+
+    # calculating VIF for each feature
+    vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(len(X.columns))]
+
+    print(vif_data)
 
 
 def main():
@@ -71,24 +85,29 @@ def main():
     data = sm.add_constant(data)
 
     X = data.iloc[:, 0:-1]
+
+    # vif_scores(X)
     y = data.iloc[:, -1]
-    x1 = X.iloc[:, 0:4]
+    """x1 = X.iloc[:, 0:4]
     x2 = X.iloc[:, 4:]
 
     model = WALSestimator(y, x1, x2)
     model.fit()
-    to_output(data, model)
+    to_output(data, model)"""
 
     # prediction_df = prediction_matrix(X, y)
 
-    avg_prediction_df = prediction_matrix(X, y, dev=True)
+    prediction_df = prediction_matrix(X, y, dev=False)
     # plot_heatmap(data)
-    R = avg_prediction_df.corr()
+    R = prediction_df.corr()
     ce = (weighing_schemes.ce_weighting_scheme(R))
     cs = (weighing_schemes.cs_weigting_scheme(R))
 
-    r_df = pd.DataFrame(data=np.vstack((ce, cs)).T, columns=['Cap-Eigenvalue', 'Cos-Square'])
-    print(r_df)
+    #r_df = pd.DataFrame(data=np.vstack((ce, cs)).T, columns=['Cap-Eigenvalue', 'Cos-Square'])
+    #print(r_df)
+
+    print(ce)
+    print(prediction_df)
 
 
 if __name__ == "__main__":
