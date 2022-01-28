@@ -6,6 +6,17 @@ import seaborn as sb
 import matplotlib.pyplot as mp
 
 
+MODEL1_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'CHAS', 'AGE', 'TAX', 'PTRATIO', 'B', 'RM^2', 'NOX^2', 'ln(DIS)', 'ln(RAD)', 'ln(LSTAT)']
+MODEL2_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'AGE', 'TAX', 'PTRATIO', 'B', 'RM^2', 'ln(DIS)', 'ln(RAD)', 'ln(LSTAT)']
+MODEL3_INDEP = ['const', 'ln(INDUS)', 'NOX', 'ln(DIS)', 'RAD', 'ln(LSTAT)']
+MODEL4_INDEP = ['const', 'RM^2', 'TAX', 'PTRATIO', 'ln(LSTAT)', 'NOX^2']
+MODEL5_INDEP = ['const', 'RM^2', 'TAX', 'PTRATIO', 'ln(LSTAT)']
+MODEL6_INDEP = ['const', 'DIS', 'CRIM', 'INDUS']
+MODEL7_INDEP = ['const', 'RM', 'PTRATIO', 'B', 'CRIM']
+MODEL8_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'NOX', 'AGE', 'TAX', 'PTRATIO', 'B', 'RM^2', 'NOX','NOX^2', 'ln(DIS)', 'ln(RAD)', 'ln(LSTAT)']
+MODELS = [MODEL1_INDEP, MODEL2_INDEP, MODEL3_INDEP, MODEL4_INDEP, MODEL5_INDEP, MODEL6_INDEP, MODEL7_INDEP, MODEL8_INDEP]
+
+
 def transformations(df):
 
     df = df.dropna()
@@ -18,21 +29,27 @@ def transformations(df):
 
 def return_prediction(X, y):
 
-    pred = sm.OLS(y, X).fit().predict()
-    return pred
+    model = sm.OLS(y, X).fit()
+    return model
 
 
-def prediction_matrix(X, y, MODELS, dev=False):
+def prediction_matrix(X, y):
 
     prediction_matrix = []
+    coeff_matrix = []
     for model in MODELS:
         indep = X[model]
-        prediction_matrix.append(return_prediction(indep, y))
-
+        model = return_prediction(indep, y)
+        prediction_matrix.append(model.predict())
+        coeff_matrix.append(model.params)
     prediction_df = pd.DataFrame(np.transpose(prediction_matrix), columns=['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8'])
-    if dev:
-        prediction_df = prediction_df.sub(prediction_df.mean(axis=1), axis=0)
-    return prediction_df
+    return prediction_df, coeff_matrix
+
+
+def get_deviations(prediction_df):
+
+    return prediction_df.sub(prediction_df.mean(axis=1), axis=0)
+
 
 
 def plot_heatmap(pred_df):
