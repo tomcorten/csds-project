@@ -10,11 +10,11 @@ import utils
 
 def wals_evaluation(X_train, y_train, X_test, y_test, k1=1):
 
-    x1 = X_train.iloc[:, 0:k1]
-    x2 = X_train.iloc[:, k1:]
+    x1 = X_train[['const', 'ln(LSTAT)']]
+    x2 = X_train.drop(x1.columns, axis=1)
     model = WALSestimator(y_train, x1, x2)
     model.fit()
-    model.predict(X_test)
+    model.predict(X_test[['const', 'ln(LSTAT)']], X_test.drop(x1.columns, axis=1))
 
     return model.mse(y_test)
 
@@ -38,18 +38,19 @@ def gw_evaluation(X_train, y_train, X_test, y_test, method, dev):
     test_predictions = pd.DataFrame(np.transpose(predictions), columns=prediction_df.columns+'_pred')
     weighted_test_predictions = test_predictions@scheme
 
-    mse = metrics.mean_absolute_error(y_test, weighted_test_predictions)
-    return np.round(mse, 3)
+    mse = metrics.mean_squared_error(y_test, weighted_test_predictions)
+    return mse
 
 
 def evaluation_pipeline(X, y, method, dev):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
     if method == 'wals':
         mse = wals_evaluation(X_train, y_train, X_test, y_test)
     else:
         mse = gw_evaluation(X_train, y_train, X_test, y_test, method, dev)
-    print(f'mean-abs-error for method {method}: {mse}. Deviations instead of predictions: {dev}')
+    print(f'mean-squared-error for method {method}: {round(mse,3)} Deviations instead of predictions: {dev}')
 
 
 def main():
@@ -57,8 +58,7 @@ def main():
     data = pd.read_csv('HousingData.csv')
     data = utils.transformations(data)
 
-    X = data.iloc[:, 0:-1]
-
+    X = data.iloc[:, 0:-1].drop(['MEDV', 'LSTAT'], axis=1)
     # vif_scores(X)
     y = data.iloc[:, -1]
     evaluation_pipeline(X, y, method='wals', dev=True)

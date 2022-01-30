@@ -11,10 +11,8 @@ MODEL2_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'AGE', 'TAX', 'PT
 MODEL3_INDEP = ['const', 'ln(INDUS)', 'NOX', 'ln(DIS)', 'RAD', 'ln(LSTAT)']
 MODEL4_INDEP = ['const', 'RM^2', 'TAX', 'PTRATIO', 'ln(LSTAT)', 'NOX^2']
 MODEL5_INDEP = ['const', 'RM^2', 'TAX', 'PTRATIO', 'ln(LSTAT)']
-MODEL6_INDEP = ['const', 'DIS', 'CRIM', 'INDUS']
-MODEL7_INDEP = ['const', 'RM', 'PTRATIO', 'B', 'CRIM']
 MODEL8_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'NOX', 'AGE', 'TAX', 'PTRATIO', 'B', 'RM^2', 'NOX','NOX^2', 'ln(DIS)', 'ln(RAD)', 'ln(LSTAT)']
-MODELS = [MODEL1_INDEP, MODEL2_INDEP, MODEL3_INDEP, MODEL4_INDEP, MODEL5_INDEP, MODEL6_INDEP, MODEL7_INDEP, MODEL8_INDEP]
+MODELS = [MODEL1_INDEP, MODEL2_INDEP, MODEL3_INDEP, MODEL4_INDEP, MODEL5_INDEP, MODEL8_INDEP]
 
 
 def transformations(df):
@@ -33,7 +31,7 @@ def return_prediction(X, y):
     return model
 
 
-def prediction_matrix(X, y):
+def prediction_matrix(X, y, dev=False):
 
     prediction_matrix = []
     coeff_matrix = []
@@ -42,7 +40,7 @@ def prediction_matrix(X, y):
         model = return_prediction(indep, y)
         prediction_matrix.append(model.predict())
         coeff_matrix.append(model.params)
-    prediction_df = pd.DataFrame(np.transpose(prediction_matrix), columns=['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8'])
+    prediction_df = pd.DataFrame(np.transpose(prediction_matrix), columns=['M1', 'M2', 'M3', 'M4', 'M5', 'M8'])
     return prediction_df, coeff_matrix
 
 
@@ -51,11 +49,12 @@ def get_deviations(prediction_df):
     return prediction_df.sub(prediction_df.mean(axis=1), axis=0)
 
 
+
 def plot_heatmap(pred_df):
 
     mask = np.triu(np.ones_like(pred_df.corr()))
     # plotting a triangle correlation heatmap
-    sb.heatmap(pred_df.corr(), cmap="YlGnBu", mask=mask, fmt='g')
+    sb.heatmap(pred_df.corr(), cmap="YlGnBu", annot=True, mask=mask, fmt='g')
     # displaying heatmap
     mp.show()
 
