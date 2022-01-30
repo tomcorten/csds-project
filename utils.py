@@ -51,12 +51,11 @@ def get_deviations(prediction_df):
     return prediction_df.sub(prediction_df.mean(axis=1), axis=0)
 
 
-
 def plot_heatmap(pred_df):
 
     mask = np.triu(np.ones_like(pred_df.corr()))
     # plotting a triangle correlation heatmap
-    sb.heatmap(pred_df.corr(), cmap="YlGnBu", annot=True, mask=mask, fmt='g')
+    sb.heatmap(pred_df.corr(), cmap="YlGnBu", mask=mask, fmt='g')
     # displaying heatmap
     mp.show()
 

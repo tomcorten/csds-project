@@ -26,17 +26,20 @@ def gw_evaluation(X_train, y_train, X_test, y_test, method, dev):
     if dev:
         R = utils.get_deviations(prediction_df)
     R_corr = R.corr()
+    # R_corr = np.round(R_corr, 4)
+    # R_corr.to_csv('schemes.csv')
     if method == 'ce':
         scheme = (weighing_schemes.ce_weighting_scheme(R_corr))
     else:
         scheme = (weighing_schemes.cs_weigting_scheme(R_corr))
-
+    # scheme = np.round(scheme, 3)
+    # print(f'weighing scheme for {method} while deviations are {dev}: {scheme}')
     predictions = [X_test[p.index]@p for p in params]
     test_predictions = pd.DataFrame(np.transpose(predictions), columns=prediction_df.columns+'_pred')
     weighted_test_predictions = test_predictions@scheme
 
-    mse = metrics.mean_squared_error(y_test, weighted_test_predictions)
-    return mse
+    mse = metrics.mean_absolute_error(y_test, weighted_test_predictions)
+    return np.round(mse, 3)
 
 
 def evaluation_pipeline(X, y, method, dev):
@@ -46,7 +49,7 @@ def evaluation_pipeline(X, y, method, dev):
         mse = wals_evaluation(X_train, y_train, X_test, y_test)
     else:
         mse = gw_evaluation(X_train, y_train, X_test, y_test, method, dev)
-    print(f'Results of Mean-squared-error: {mse}')
+    print(f'mean-abs-error for method {method}: {mse}. Deviations instead of predictions: {dev}')
 
 
 def main():
@@ -58,8 +61,11 @@ def main():
 
     # vif_scores(X)
     y = data.iloc[:, -1]
+    evaluation_pipeline(X, y, method='wals', dev=True)
     evaluation_pipeline(X, y, method='ce', dev=True)
-
+    evaluation_pipeline(X, y, method='cs', dev=False)
+    evaluation_pipeline(X, y, method='ce', dev=False)
+    evaluation_pipeline(X, y, method='cs', dev=True)
 
 if __name__ == "__main__":
     main()
