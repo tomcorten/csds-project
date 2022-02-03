@@ -7,7 +7,6 @@ def ce_weighting_scheme(R):
     Xi, T = np.linalg.eig(R)
     eig = np.diag(Xi)
     eig_star = np.copy(eig)
-    eig_star = np.round(eig_star)
     eig_star[np.where((eig_star > 1))] = 1
     R_star = T@eig_star@T.T
 
@@ -18,7 +17,7 @@ def cs_weigting_scheme(R):
 
     D = np.identity(len(R))
     eps = 8*[1]
-    toll = 1e-7
+    toll = 1e-5
 
     while all(np.abs(x) > toll for x in eps):
         gamma, Q = np.linalg.eig(D@R@D)

@@ -11,18 +11,21 @@ MODEL2_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'AGE', 'TAX', 'PT
 MODEL3_INDEP = ['const', 'ln(INDUS)', 'NOX', 'ln(DIS)', 'RAD', 'ln(LSTAT)']
 MODEL4_INDEP = ['const', 'RM^2', 'TAX', 'PTRATIO', 'ln(LSTAT)', 'NOX^2']
 MODEL5_INDEP = ['const', 'RM^2', 'TAX', 'PTRATIO', 'ln(LSTAT)']
-MODEL8_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'NOX', 'AGE', 'TAX', 'PTRATIO', 'B', 'RM^2', 'NOX','NOX^2', 'ln(DIS)', 'ln(RAD)', 'ln(LSTAT)']
+MODEL8_INDEP = ['const', 'CRIM', 'ZN', 'INDUS', 'NOX', 'AGE', 'TAX', 'PTRATIO', 'B', 'RM^2', 'CHAS','NOX^2', 'ln(DIS)', 'ln(RAD)', 'ln(LSTAT)']
 MODELS = [MODEL1_INDEP, MODEL2_INDEP, MODEL3_INDEP, MODEL4_INDEP, MODEL5_INDEP, MODEL8_INDEP]
 
 
-def transformations(df):
+def preprocess(df):
 
     df = df.dropna()
     df = sm.add_constant(df)
     df[['RM^2', 'NOX^2']] = df.loc[:, ['RM', 'NOX']]**2
     df[['ln(DIS)', 'ln(RAD)', 'ln(LSTAT)', 'ln(INDUS)', 'ln(MEDV)']] = np.log(df.loc[:, ['DIS', 'RAD', 'LSTAT', 'INDUS', 'MEDV']])
 
-    return df
+    X = df.iloc[:, 0:-1].drop(['MEDV', 'LSTAT', 'RM', 'DIS'], axis=1)
+    y = df.iloc[:, -1]
+
+    return X, y
 
 
 def return_prediction(X, y):
@@ -47,8 +50,6 @@ def prediction_matrix(X, y, dev=False):
 def get_deviations(prediction_df):
 
     return prediction_df.sub(prediction_df.mean(axis=1), axis=0)
-
-
 
 def plot_heatmap(pred_df):
 

@@ -15,7 +15,6 @@ def wals_evaluation(X_train, y_train, X_test, y_test, k1=1):
     model = WALSestimator(y_train, x1, x2)
     model.fit()
     model.predict(X_test[['const', 'ln(LSTAT)']], X_test.drop(x1.columns, axis=1))
-
     return model.mse(y_test)
 
 
@@ -26,18 +25,14 @@ def gw_evaluation(X_train, y_train, X_test, y_test, method, dev):
     if dev:
         R = utils.get_deviations(prediction_df)
     R_corr = R.corr()
-    # R_corr = np.round(R_corr, 4)
-    # R_corr.to_csv('schemes.csv')
+    R_corr.to_csv('schemes.csv')
     if method == 'ce':
         scheme = (weighing_schemes.ce_weighting_scheme(R_corr))
     else:
         scheme = (weighing_schemes.cs_weigting_scheme(R_corr))
-    # scheme = np.round(scheme, 3)
-    # print(f'weighing scheme for {method} while deviations are {dev}: {scheme}')
     predictions = [X_test[p.index]@p for p in params]
     test_predictions = pd.DataFrame(np.transpose(predictions), columns=prediction_df.columns+'_pred')
     weighted_test_predictions = test_predictions@scheme
-
     mse = metrics.mean_squared_error(y_test, weighted_test_predictions)
     return mse
 
@@ -56,16 +51,14 @@ def evaluation_pipeline(X, y, method, dev):
 def main():
 
     data = pd.read_csv('HousingData.csv')
-    data = utils.transformations(data)
+    X, y = utils.preprocess(data)
 
-    X = data.iloc[:, 0:-1].drop(['MEDV', 'LSTAT'], axis=1)
-    # vif_scores(X)
-    y = data.iloc[:, -1]
     evaluation_pipeline(X, y, method='wals', dev=True)
+    evaluation_pipeline(X, y, method='ce', dev=False)
     evaluation_pipeline(X, y, method='ce', dev=True)
     evaluation_pipeline(X, y, method='cs', dev=False)
-    evaluation_pipeline(X, y, method='ce', dev=False)
     evaluation_pipeline(X, y, method='cs', dev=True)
+
 
 if __name__ == "__main__":
     main()
