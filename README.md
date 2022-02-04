@@ -5,7 +5,7 @@ These instructions will get you a copy up and running on your local machine for 
 
 ##### 1 Get package locally
 
--clone the module
+-clone the module \\
 -pip install -r /path/to/requirements.txt
 
 
